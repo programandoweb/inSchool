@@ -1,0 +1,214 @@
+from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.models import BaseUserManager
+
+class InstitutionsProfileManager(BaseUserManager):
+    """ Manager for Profiles of Institutions """
+    def create_institutrion(self,name,nit,password=None):
+        """Create new Institution"""
+        if not name:
+            raise ValueError("La Institución debe estar definida")
+
+        institute   =   self.model(name=name)
+        institute.set_passwoprd(password)
+        institute.save(using=self._db)
+
+        return institute
+
+
+
+class InstitutionsProfile(AbstractBaseUser,PermissionsMixin):
+    """Model Database for Institutions"""
+    name        =   models.CharField(max_length=255)
+    nit         =   models.CharField(max_length=15, unique=True)
+    is_active   =   models.BooleanField(default=True)
+    token       =   models.CharField(max_length=255)
+
+    objects         =   InstitutionsProfileManager()
+
+    """"Method for login"""
+    UNSERNAME_FIELD =   'email'
+    REQUIRED_FIELDS =   ['name']
+
+    def get_full_name(self):
+        """Get complete name"""
+        return self.name
+
+    def get_short_name(self):
+        """Get short name"""
+        return self.name    
+
+    def __str__(self):
+        """return string for user prepresentation"""
+        return   self.name  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from django.db import models
+from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.models import BaseUserManager
+
+
+class UserProfileManager(BaseUserManager):
+    """ Manager for Profiles of Institutions """
+    def create_user(self,name,email,password=None):
+        """Create new Institution"""
+        if not email:
+            raise ValueError("El usuario require un email para continuar")
+
+        email   =   self.normalize_email(email)
+        
+        if not name:
+            raise ValueError("La Institución debe estar definida")
+
+        user   =   self.model(name=name,email=email)
+        user.username   =   email
+        user.set_password(password)
+        user.save(using=self._db)
+
+        return user
+
+    def create_superuser(self,name,email,password):
+        user    =   self.create_user(email,name,password)
+        user.is_superuser   =   True
+        user.is_staff       =   True
+        user.save(using=self._db)
+
+        return user
+
+class UserProfile(AbstractBaseUser,PermissionsMixin):
+    """Model Database for Users"""
+    username    =   models.CharField(max_length=255,unique=True)
+    name        =   models.CharField(max_length=255)
+    email       =   models.EmailField(max_length=255, unique=True)
+    nit         =   models.CharField(max_length=15, unique=True)
+    is_active   =   models.BooleanField(default=True)
+    is_staff    =   models.BooleanField(default=False)
+    token       =   models.CharField(max_length=255)
+
+    objects         =   UserProfileManager()
+
+    """"Method for login"""
+    USERNAME_FIELD =   'email'
+    REQUIRED_FIELDS =   ['name']
+
+    def get_full_name(self):
+        """Get complete name"""
+        return self.name
+
+    def get_short_name(self):
+        """Get short name"""
+        return self.name    
+
+    def __str__(self):
+        """return string for user prepresentation"""
+        return   self.name  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+    from email import message
+from rest_framework.views import APIView
+from rest_framework.views import Response
+from rest_framework import status
+
+from users import serializers
+
+class UserView(APIView):
+
+    serializer_class    =   serializers.FirtsSerializer
+
+    def get(self,request,format=None):
+        an_apiview  =   [
+            'Programandoweb.net '
+        ]
+        return Response({'message':'Hello','an_apiview':an_apiview})
+
+    def post(self,request):
+        """ 
+            MI PRIMER POST, AL HACER ESO, ME MOSTRARÁ UN INPUT DEBAJO PARA CARGAR INFORMACIÓN
+            ES IMPORTANTE RESALTAR QUE CUANDO CREAMOS NUESTRO SERIALIZER DEFINIMOS LA VARIABLE NAME
+            CON MÁSXIMO 10 CARACTERES, LO QUE NOS GENERARÁ UN ERORR SI EL INPUT ENVÍA MÁS CARACTERES
+            DE LOS PERMITIDOS
+        """
+
+        serializer  =   self.serializer_class(data=request.data)
+
+        if serializer.is_valid():
+            name    =   serializer.validated_data.get('name')
+            message =   f'Hello {name}'
+            return Response({'message':message})
+        else:
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def put(self,request,pk=None):       
+        """Actualizar un obejto"""
+        return Response({'METHOD':'put'})
+
+    def patch(self,request,pk=None):       
+        """Actualizar PARCIAL UN OBJETO sólo un campo de la tabla"""
+        return Response({'METHOD':'PATH'})
+
+    def delete(self,request,pk=None):       
+        """Actualizar PARCIAL UN OBJETO sólo un campo de la tabla"""
+        return Response({'METHOD':'DELETE'})            
+
+
+
+
+
+from django.contrib import admin
+from django.urls import path
+from users import views
+
+urlpatterns = [
+path('', views.UserView.as_view()), 
+#path('all/', views.UsersView.as_view()), 
+path('all/', views.PaginationUserViewSet.as_view({'get': 'list'})), 
+]    
+
+
+
+
+from django.urls import include, path
+from rest_framework import routers
+from users import views
+
+router = routers.DefaultRouter()
+router.register(r'users', views.UserViewSet)
+router.register(r'groups', views.GroupViewSet)
+
+urlpatterns = [
+    path('', include(router.urls)),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+]

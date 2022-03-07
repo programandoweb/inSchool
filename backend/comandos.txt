@@ -1,0 +1,35 @@
+pip install -r requirements.txt 
+    esto inicia el proyecto con todos los requerimientos
+
+django-admin startproject inschool 
+    con esto creamos un proyecto
+
+py manage.py startapp institutions 
+    creamos todo lo relativo a instituciones
+
+py manage.py startapp users 
+    creamos todo lo relativo a los usuarios
+
+py manage.py makemigrations institutions 
+    este comando lo que hace es actualizar las tablas y campos en nuestra base de datos
+
+
+pip install django mysqlclient
+    esto instalará nuestro cliente de base de datos mariadb
+
+
+CREATE TRIGGER `Generator Token TypeUserApp` 
+    BEFORE INSERT ON `users_typeuserapp` 
+        FOR EACH ROW SET NEW.token = CONCAT ("TypeUserApp_", MD5(RAND()), MD5(RAND()), MD5("TypeUserApp"))
+
+CREATE TRIGGER `Generator Token GroupTypeUserApp` 
+    BEFORE INSERT ON `users_grouptypeuserapp` 
+        FOR EACH ROW SET NEW.token = CONCAT ("GroupTypeUserApp_", MD5(RAND()), MD5(RAND()), MD5("GroupTypeUserApp"))       
+    
+    Generador de tokens de las tablas
+
+CREATE TRIGGER `Generator Token userapp` 
+    BEFORE INSERT ON `users_userapp` 
+        FOR EACH ROW SET NEW.token = CONCAT ("user_", MD5(RAND()), MD5(RAND()), MD5("user"))       
+    
+    Generador de tokens de las tablas
