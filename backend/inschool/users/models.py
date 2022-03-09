@@ -9,7 +9,7 @@ class GroupTypeUserApp(models.Model):
     class Meta:
         ordering    =   ['label']
 
-    fields          =   ('names')
+    fields          =   ('label')
     list_display    =   ('label')
     
     def __str__(self):
@@ -18,17 +18,19 @@ class GroupTypeUserApp(models.Model):
 class TypeUserApp(models.Model):
     ma_grouptype_user_id    =   models.ForeignKey(GroupTypeUserApp,on_delete=models.CASCADE)
     ma_type_user_id         =   models.AutoField(primary_key=True)    
-    label                   =   models.CharField(max_length=255, blank=True, null=True)
-    token                   =   models.CharField(max_length=255,blank=True, null=True)    
+    label                   =   models.CharField(max_length=255, blank=True)
+    token                   =   models.CharField(max_length=255,blank=True, null=True,verbose_name="Nombre")    
     
     class Meta:
         ordering    =   ['label']
 
-    fields          =   ('names')
+    fields          =   ('label')
     list_display    =   ('label')
     
     def __str__(self):
         return self.label
+    
+        
 
 class UserApp(models.Model):
     ma_type_user_id =   models.ForeignKey(TypeUserApp,on_delete=models.CASCADE)
@@ -50,6 +52,6 @@ class UserApp(models.Model):
     list_display    =   ('names', 'lastnames', 'email')
 
     def __str__(self):
-        return self.lastnames 
+        return f"{self.names}  {self.lastnames}  ({self.document})"
 
  

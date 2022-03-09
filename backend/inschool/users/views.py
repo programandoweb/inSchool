@@ -1,15 +1,14 @@
 from email import message
-from rest_framework.views import APIView
 from rest_framework.views import Response
 from rest_framework import status
+from rest_framework.views import APIView
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from django.contrib.auth.hashers import make_password #,check_password
 
-from .serializers import UsersSerializers,UserSerializerNew,TypeUserAppSerializer
+from .serializers import UserSerializer,UserSerializerNew,TypeUserAppSerializer,ListStudientsSerializer,ListAttendeesSerializer,GroupUserAppSerializer,UserLoginSerializer, UserModelSerializer
 from users import serializers
-from .models import UserApp,TypeUserApp
-
-
+from .models import UserApp,TypeUserApp,GroupTypeUserApp
 
 
 
@@ -29,99 +28,52 @@ class PaginationUserViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
     """
-    queryset            = UserApp.objects.all().select_related('ma_type_user_id').order_by('names')
+
+    queryset            = UserApp.objects.all()
     serializer_class    = UserSerializerNew  
 
-    def set_comment(self, request, pk=None):
-        my_post = self.get_object()  
-        serializer = TypeUserAppSerializer(data=request.data)                 
-        if serializer.is_valid():
-            serializer.save(post=my_post)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    @action(detail=False)
+    def studients(self, request):
+        retornar            = UserApp.objects.filter(ma_type_user_id=9)
+        serializer          = UserSerializerNew(retornar, many=True)
+        return Response(serializer.data)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=False)
+    def attendees(self, request):
+        retornar            = UserApp.objects.filter(ma_type_user_id=8)
+        serializer          = UserSerializerNew(retornar, many=True)
+        return Response(serializer.data)    
+
+
+class PaginationTypeViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint match Types users.
+    """
+    queryset            = TypeUserApp.objects.all()
+    serializer_class    = TypeUserAppSerializer
 
 class PaginationGroupViewSet(viewsets.ModelViewSet):
     """
-    API endpoint that allows users to be viewed or edited.
+    API endpoint match Types users.
     """
-    queryset            = TypeUserApp.objects.all().select_related('ma_grouptype_user_id').order_by('label')
-    serializer_class    = TypeUserAppSerializer  
+    queryset            = GroupTypeUserApp.objects.all()
+    serializer_class    = GroupUserAppSerializer
 
-
-class UsersView(APIView):    
-    ma_type_user_id     =   1
-    serializer_class    =   serializers.UserSerializer
+class LoginViewSet(viewsets.ModelViewSet):
     
-    def get(self,request,format=None):
-        #users       =   UserApp.objects.all().select_related('parametro')
-        users        =   UserApp.objects.select_related('ma_type_user_id')
-        
-        #return print(users)
+    queryset = UserApp.objects.all()
+    serializer_class = UserLoginSerializer
 
-        serializer   =   UsersSerializers(users, many=True)
-        
-        
-
-        if serializer:
-            return Response(serializer.data)
-        else:
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-    
-class UserView(APIView):
-
-    
-    serializer_class    =   serializers.UserSerializer
-
-    def get(self,request,format=None):
-        
-        return Response(intro())
-
-    def post(self,request):
-        """ 
-            MI PRIMER POST, AL HACER ESO, ME MOSTRARÁ UN INPUT DEBAJO PARA CARGAR INFORMACIÓN
-            ES IMPORTANTE RESALTAR QUE CUANDO CREAMOS NUESTRO SERIALIZER DEFINIMOS LA VARIABLE NAME
-            CON MÁSXIMO 10 CARACTERES, LO QUE NOS GENERARÁ UN ERORR SI EL INPUT ENVÍA MÁS CARACTERES
-            DE LOS PERMITIDOS
-        """
-        serializer  =   self.serializer_class(data=request.data)
-
-        if serializer.is_valid():
-
-            password_post   =   encode_password(serializer.validated_data.get('password'))
-            
-            UserApp.objects.create(
-                            names       =   serializer.validated_data.get('names'),
-                            lastnames   =   serializer.validated_data.get('lastnames'),
-                            email       =   serializer.validated_data.get('email'),
-                            document    =   serializer.validated_data.get('document'),
-                            token_operation   =   "init",
-                            password    =   password_post,
-                            token       =   f'user_{password_post}'
-                        )
-
-            names       =   serializer.validated_data.get('names')
-            message     =   f'Hello {names} data success'
-
-            return Response({'message':message})
-        else:
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-    def put(self,request,pk=None):       
-        """Actualizar un obejto"""
-        return Response({'METHOD':'put'})
-
-    def patch(self,request,pk=None):       
-        """Actualizar PARCIAL UN OBJETO sólo un campo de la tabla"""
-        return Response({'METHOD':'PATH'})
-
-    def delete(self,request,pk=None):       
-        """Actualizar PARCIAL UN OBJETO sólo un campo de la tabla"""
-        return Response({'METHOD':'DELETE'})        
+    # Detail define si es una petición de detalle o no, 
+    # en methods añadimos el método permitido, en nuestro caso solo vamos a permitir post
+    @action(detail=False, methods=['post','get'])
+    def login(self, request):
+        """User sign in."""
+        serializer = UserLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user, token = serializer.save()
+        data = {
+            'user': UserModelSerializer(user).data,
+            'access_token': token
+        }
+        return Response(data, status=status.HTTP_201_CREATED)    
